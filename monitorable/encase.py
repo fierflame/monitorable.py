@@ -1,7 +1,7 @@
 from .mark import mark_change, mark_read
 
 class encase:
-	def __init__(self, target = None, nest = 0):
+	def __init__(self, target: dict = None, nest: int = 0):
 		self.__dict = target or dict()
 		self.__nest = nest
 	def __getitem__(self, k):
@@ -26,3 +26,9 @@ class encase:
 		return k in self.__dict
 	def __call__(self):
 		return self.__dict
+
+
+def recover(v):
+	if (isinstance(v, encase)):
+		return v()
+	return v
