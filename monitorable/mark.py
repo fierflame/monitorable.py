@@ -1,4 +1,5 @@
 from .utils import safeify
+from weakref import WeakKeyDictionary
 
 _read = None # dist
 def mark_read(target, prop):
@@ -21,7 +22,7 @@ def observe(fn, map, **options):
 	finally:
 		_read = oldread
 
-_watchList = dict() # TODO: WeakMap
+_watchList = WeakKeyDictionary()
 
 
 def _exec_watch(target, prop):
@@ -75,20 +76,20 @@ def mark_change(target, prop):
 def watch_prop(target, prop, cb):
 	global _watchList
 	if not target in _watchList:
-		_watchList[target] = dict() # TODO: WeakMap
+		_watchList[target] = WeakKeyDictionary()
 	list = _watchList[target]
 	if not prop in list:
 		list[prop] = set()
 	watch = list[prop]
-	safeifyCb = safeify(cb)
-	watch.add(safeifyCb)
+	safeify_cb = safeify(cb)
+	watch.add(safeify_cb)
 	removed = False
 	def remove():
 		if removed:
 			return
-		if not safeifyCb in watch:
+		if not safeify_cb in watch:
 			return
-		watch.remove(safeifyCb)
+		watch.remove(safeify_cb)
 		if len(watch):
 			return
 		if not prop in list:
