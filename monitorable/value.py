@@ -14,22 +14,22 @@ class Trigger:
 		self.__clear_callbacks = clear_callbacks
 	def __call__(self):
 		callbacks = self.__callbacks
-		if not callbacks:
+		if callbacks == None:
 			return
 		mark_change(self.__value, 'value')
-		for cb in callbacks:
+		for cb in set(callbacks):
 			cb(value, False)
 	def has(self):
 		callbacks = self.__callbacks
 		return bool(callbacks and len(callbacks))
 	def stop(self):
 		callbacks = self.__callbacks
-		if not callbacks:
+		if callbacks == None:
 			return
 		clear_callbacks = self.__clear_callbacks
-		if not clear_callbacks:
+		if clear_callbacks == None:
 			clear_callbacks()
-		for cb in callbacks:
+		for cb in set(callbacks):
 			cb(value, True)
 
 class Value:
@@ -38,8 +38,8 @@ class Value:
 	@property
 	def value(self):
 		return self.__get()
-	@score.setter
-	def score(self, value):
+	@value.setter
+	def value(self, value):
 		return self.__set(value)
 	def __init__(self,
 		get,
@@ -48,12 +48,14 @@ class Value:
 		change = lambda: None,
 		trigger = None,
 	):
+		if trigger == None:
+			trigger = Trigger()
 		def getValue():
 			mark_read(self, 'value')
 			return get()
 		self.__get = getValue
 		def setValue(v, marked = False):
-			if not set:
+			if set == None:
 				return
 			def mark():
 				nonlocal marked
@@ -61,14 +63,12 @@ class Value:
 			try:
 				set(v, mark)
 			finally:
-				if (marked):
+				if marked and trigger:
 					trigger()
 		self.__set = setValue
 		self.__stop = stop
 		self.__change = change
 		self.__callbacks = []
-		if not trigger:
-			return
 		def clear_callbacks():
 			self.__callbacks = None
 		self.__trigger = trigger
@@ -83,7 +83,7 @@ class Value:
 		return self.__get()
 	def watch(self, cb):
 		callbacks = self.__callbacks
-		if not callbacks:
+		if callbacks == None:
 			return lambda: None
 		safeify_cb = safeify(cb)
 		callbacks.append(safeify_cb)
@@ -94,7 +94,7 @@ class Value:
 			if cancelled:
 				return
 			cancelled = True
-			if not callbacks:
+			if callbacks == None:
 				return
 			if safeify_cb not in callbacks:
 				return
@@ -107,7 +107,7 @@ class Value:
 		self.__stopped = True
 		self.__stop()
 		trigger = self.__trigger
-		if not trigger:
+		if trigger == None:
 			return
 		trigger.stop()
 
@@ -137,15 +137,15 @@ def computed(getter, setter = None, **options):
 	postpone = options.get('postpone')
 	source = None
 	proxyValue = None
-	stopped = None
-	computed = None
+	stopped = False
+	computed = False
 	trigger = Trigger()
-	def changed(changed):
+	def value_changed(changed):
 		nonlocal computed, trigger
 		computed = not changed
 		if changed and trigger:
 			trigger()
-	executable = Executable(getter, changed, postpone=postpone)
+	executable = Executable(getter, value_changed, postpone=postpone)
 	def run():
 		nonlocal computed, stopped, source, proxyValue
 		computed = True

@@ -4,10 +4,12 @@ from .utils import safeify
 
 _read = None # dist
 def mark_read(target, prop):
-	global _read
-	if not _read:
+	if not isinstance(prop, str):
 		return
-	if not target in _read:
+	global _read
+	if _read == None:
+		return
+	if  target not in _read:
 		_read[target] = set()
 	_read[target].add(prop)
 
@@ -56,19 +58,19 @@ _watchList = WeakKeyDictionary()
 def _exec_watch(target, prop):
 	global _watchList
 	watches = _watchList.get(target)
-	if not watches:
+	if watches == None:
 		return
 	watches = watches.get(prop)
-	if not watches:
+	if watches == None:
 		return
-	for w in watches:
+	for w in set(watches):
 		w()
 
 _waitList = None
 
 def _run(list):
-	for (target, set) in list.items():
-		for prop in set:
+	for (target, props) in dict(list).items():
+		for prop in set(props):
 			_exec_watch(target, prop)
 
 @contextmanager
@@ -125,10 +127,10 @@ postpone.__exit__ = _postpone_exit
 
 def _wait(target, prop):
 	global _waitList
-	if not _waitList:
+	if _waitList == None:
 		return False
 	list = _waitList.get(target)
-	if not list:
+	if list == None:
 		list = set()
 		_waitList[target] = list
 	list.add(prop)
@@ -142,10 +144,12 @@ def mark_change(target, prop):
 
 def watch_prop(target, prop, cb):
 	global _watchList
-	if not target in _watchList:
-		_watchList[target] = WeakKeyDictionary()
+	if not isinstance(prop, str):
+		return
+	if target not in _watchList:
+		_watchList[target] = dict()
 	list = _watchList[target]
-	if not prop in list:
+	if prop not in list:
 		list[prop] = set()
 	watch = list[prop]
 	safeify_cb = safeify(cb)
@@ -154,19 +158,19 @@ def watch_prop(target, prop, cb):
 	def remove():
 		if removed:
 			return
-		if not safeify_cb in watch:
+		if safeify_cb not in watch:
 			return
 		watch.remove(safeify_cb)
 		if len(watch):
 			return
-		if not prop in list:
+		if prop not in list:
 			return
 		if list[prop] != watch:
 			return
 		del list[prop]
 		if len(list):
 			return
-		if not target in _watchList:
+		if target not in _watchList:
 			return
 		if _watchList[target] != list:
 			return

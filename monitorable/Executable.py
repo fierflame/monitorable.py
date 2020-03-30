@@ -12,11 +12,11 @@ class Executable:
 		if self.__cancel():
 			self.__cb(True)
 	def __cancel(self):
-		if not self.__cancel_list:
+		if self.__cancel_list == None:
 			return False
 		list = self.__cancel_list
 		self.__cancel_list = None
-		for f in list:
+		for f in set(list):
 			f()
 		return True
 	def __call__(self):
@@ -30,8 +30,8 @@ class Executable:
 		finally:
 			if ok and len(thisRead):
 				cancel_list = self.__cancel_list = []
-				for (target, set) in thisRead.items():
-					for prop in set:
+				for (target, props) in dict(thisRead).items():
+					for prop in set(props):
 						cancel_list.append(
 							watch_prop(
 								recover(target),
