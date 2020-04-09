@@ -10,8 +10,11 @@ def mark_read(target, prop):
 	if _read == None:
 		return
 	if  target not in _read:
-		_read[target] = set()
-	_read[target].add(prop)
+		_read[target] = dict()
+	propMap = _read[target]
+	if prop in propMap:
+		return
+	propMap[prop] = False
 
 class _with_observe:
 	__old = []
@@ -70,8 +73,13 @@ _waitList = None
 
 def _run(list):
 	for (target, props) in dict(list).items():
+		propMap = None
+		if _read:
+			propMap = _read.get(target)
 		for prop in set(props):
 			_exec_watch(target, prop)
+			if propMap and prop in propMap:
+				propMap[prop] = True
 
 @contextmanager
 def _with_postpone(priority = False):

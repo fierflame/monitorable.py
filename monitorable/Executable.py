@@ -19,29 +19,28 @@ class Executable:
 		for f in set(list):
 			f()
 		return True
+	def __run(self, this_read):
+		if len(this_read) == 0:
+			self.__cb(False)
+			return
+		list = []
+		for (target, props) in dict(this_read).items():
+			for (p, m) in dict(props).items():
+				if m:
+					self.__cb(True)
+					return
+				list.append((target, p))
+		cancel_list = []
+		trigger = self.__trigger
+		for (o, p) in list:
+			cancel_list.append(watch_prop(recover(o), p, trigger))
+		self.___cancel_list = cancel_list
 	def __call__(self):
 		self.__cancel()
-		thisRead = dict()
-		ok = False
-		try:
-			result = observe(thisRead, self.__fn, **self.__options)
-			ok = True
-			return result
-		finally:
-			if ok and len(thisRead):
-				cancel_list = self.__cancel_list = []
-				for (target, props) in dict(thisRead).items():
-					for prop in set(props):
-						cancel_list.append(
-							watch_prop(
-								recover(target),
-								prop,
-								self.__trigger
-							)
-						)
-			else:
-				self.__cb(False)
-		pass
+		this_read = dict()
+		result = observe(this_read, self.__fn, **self.__options)
+		self.__run(this_read)
+		return result
 	def stop(self):
 		if self.__cancel():
 			self.__cb(False)
