@@ -1,7 +1,7 @@
 from .utils import safeify
 from .mark import mark_read, mark_change
 from .encase import recover, encase
-from .Executable import Executable
+from .monitor import monitor
 from weakref import WeakSet
 
 class Trigger:
@@ -145,7 +145,7 @@ def computed(getter, setter = None, **options):
 		computed = not changed
 		if changed and trigger:
 			trigger()
-	executable = Executable(getter, value_changed, postpone=postpone)
+	executable = monitor(getter, value_changed, postpone=postpone)
 	def run():
 		nonlocal computed, stopped, source, proxyValue
 		computed = True

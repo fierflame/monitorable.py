@@ -2,7 +2,7 @@ from .utils import safeify
 from .mark import observe, watch_prop
 from .encase import recover
 
-class Executable:
+class monitor:
 	__cancel_list = None
 	def __init__(self, fn, cb, **options):
 		self.__options = options
@@ -35,10 +35,14 @@ class Executable:
 		for (o, p) in list:
 			cancel_list.append(watch_prop(recover(o), p, trigger))
 		self.___cancel_list = cancel_list
-	def __call__(self):
+	def __call__(self, *p, **pp):
 		self.__cancel()
 		this_read = dict()
-		result = observe(this_read, self.__fn, **self.__options)
+		result = observe(
+			this_read,
+			lambda: self.__fn(*p, **pp),
+			**self.__options
+		)
 		self.__run(this_read)
 		return result
 	def stop(self):
